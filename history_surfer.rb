@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+require 'pathname'
 
 ROOT = Pathname.new ARGV[0]
 Dir.chdir ROOT
@@ -78,7 +79,7 @@ head.specs.map do |spec|
     s = commit.search(lbegin, lbegin + size.to_i - 1)
 
     # Make the chain more compact if the spec remains the same.
-    chain.pop if chain.last && chain.last == s
+    chain.pop if chain.last[1] == s
 
     chain << [sha, s]
   end
@@ -92,3 +93,5 @@ chains.each do |chain|
     puts "#{sha}: #{spec}"
   end
 end
+
+`git checkout master`
