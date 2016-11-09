@@ -75,12 +75,16 @@ class Commit
     if @cache[sha]
       @cache[sha]
     else
-      _, output = DISPATCH.call("camfort stencils-infer #{FILE_NAME}")
+      success, output = DISPATCH.call("camfort stencils-infer #{FILE_NAME}")
 
       @cache[sha] =
-        output.scan(STENCIL_R).map do |lb, le, spec|
-          raise 'Stencil not properly parsed.' unless lb && le && spec
-          StencilSpec.new spec, lb, le
+        if success
+          output.scan(STENCIL_R).map do |lb, le, spec|
+            raise 'Stencil not properly parsed.' unless lb && le && spec
+            StencilSpec.new spec, lb, le
+          end
+        else
+          []
         end
     end
   end
@@ -88,10 +92,14 @@ end
 
 head = Commit.new DISPATCH.call('git rev-parse HEAD')[1].chomp
 
+# If the top level file doesn't have any stencils, don't bother.
+exit 0 if head.specs == []
+
 chains =
   head.specs.map do |topspec|
     DISPATCH.call('git checkout master')
-    _, output = DISPATCH.call("git log -L #{topspec.lbegin},#{topspec.lend}:#{FILE_NAME}")
+    _, output =
+      DISPATCH.call("git log -L #{topspec.lbegin},#{topspec.lend}:#{FILE_NAME}")
 
     chain = [[head.sha, topspec]]
     output.scan(LOG_R) do |sha, lb, size|
