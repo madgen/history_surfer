@@ -1,9 +1,13 @@
 # frozen_string_literal: true
 require 'pathname'
+require 'minitest'
 
 ROOT = Pathname.new ARGV[0]
 Dir.chdir ROOT
 FILE_NAME = ARGV[1]
+
+LOG_R = /commit (\w+)$.*?@@ -\d+,\d+ \+(\d+),(\d+) @@/m
+STENCIL_R = /^\((\d+):+\d+\)-\((\d+):\d+\) \t(.*)$/
 
 `git checkout master`
 
@@ -21,8 +25,8 @@ class StencilSpec
     @lend - @lbegin
   end
 
-  def ==(o)
-    @spec == o.spec
+  def ==(other)
+    @spec == other.spec
   end
 
   def to_s
@@ -48,7 +52,7 @@ class Commit
     end
   end
 
-  private
+  private_class_method
 
   def self.collect_specs(sha)
     `git checkout #{sha}^`
@@ -59,7 +63,8 @@ class Commit
       output = `camfort stencils-infer #{FILE_NAME}`
 
       @cache[sha] =
-        output.scan(/^\((\d+):+\d+\)-\((\d+):\d+\) \t(.*)$/).map do |lb, le, spec|
+        output.scan(STENCIL_R).map do |lb, le, spec|
+          raise 'Stencil not properly parsed.' unless lb && le && spec
           StencilSpec.new spec, lb, le
         end
     end
@@ -69,23 +74,24 @@ end
 head = Commit.new `git rev-parse HEAD`.chomp
 
 chains =
-head.specs.map do |spec|
-  output = `git log -L #{spec.lbegin},#{spec.lend}:#{FILE_NAME}`
+  head.specs.map do |topspec|
+    output = `git log -L #{topspec.lbegin},#{topspec.lend}:#{FILE_NAME}`
 
-  chain = [[head.sha, spec]]
-  output.scan(/commit (\w+)$.*?@@ -\d+,\d+ \+(\d+),(\d+) @@/m) do |sha, lb, size|
-    lbegin = lb.to_i
-    commit = Commit.new sha
-    s = commit.search(lbegin, lbegin + size.to_i - 1)
+    chain = [[head.sha, topspec]]
+    output.scan(LOG_R) do |sha, lb, size|
+      lbegin = lb.to_i
+      commit = Commit.new sha
+      spec = commit.search(lbegin, lbegin + size.to_i - 1)
+      raise "Stencil wasn't found for #{commit.sha}" unless spec
 
-    # Make the chain more compact if the spec remains the same.
-    chain.pop if chain.last[1] == s
+      # Make the chain more compact if the spec remains the same.
+      chain.pop if chain.last[1] == spec
 
-    chain << [sha, s]
+      chain << [sha, spec]
+    end
+
+    chain
   end
-
-  chain
-end
 
 chains.each do |chain|
   puts '-' * 80
