@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'pathname'
-require 'minitest'
 require 'English'
 
 unless ARGV.size == 2
