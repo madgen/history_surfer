@@ -4,6 +4,11 @@ require 'pathname'
 require 'minitest'
 require 'English'
 
+unless ARGV.size == 2
+  puts "usage: #{$PROGRAM_NAME} <path_to_repo> <path_to_file>"
+  exit 1
+end
+
 ROOT = Pathname.new ARGV[0]
 Dir.chdir ROOT
 FILE_NAME = ARGV[1]
@@ -120,6 +125,8 @@ chains =
   end
 
 chains.each do |chain|
+  next if chain.size == 1
+
   puts '-' * 80
   chain.each do |sha, spec|
     puts "#{sha}: #{spec}"
