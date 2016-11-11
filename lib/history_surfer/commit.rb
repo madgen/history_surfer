@@ -34,12 +34,12 @@ class HistorySurfer
       if @cache[sha]
         @cache[sha]
       else
-        success, output = dispatch("camfort stencils-infer #{FILE_NAME}")
+        success, output = dispatch("stack exec -- camfort stencils-infer #{FILE_NAME}")
 
         @cache[sha] =
           if success
             output.scan(STENCIL_R).map do |lb, le, spec|
-              raise 'Stencil not properly parsed.' unless lb && le && spec
+              raise 'Specification not properly parsed.' unless lb && le && spec
               StencilSpec.new spec, lb, le
             end
           else
