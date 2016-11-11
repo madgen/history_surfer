@@ -8,7 +8,7 @@ class HistorySurfer
   class Commit
     include HistorySurfer::Util
 
-    STENCIL_R = /^\((\d+):+\d+\)-\((\d+):\d+\) \t(.*)$/
+    STENCIL_R = /^\((\d+):\d+\)-\((\d+):\d+\) {4}(.*)$/
 
     @cache = {}
 
