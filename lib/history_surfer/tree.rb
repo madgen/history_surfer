@@ -12,7 +12,7 @@ class HistorySurfer
       gitlog.scan(LOG_R) do |sha, lb, size|
         lbegin = lb.to_i
         lend = lbegin + size.to_i - 1
-        @family_chain << [sha, lbegin, lend]
+        @family_chain << [sha, lbegin, lend] unless sha == commit.sha
       end
       @root = Node.new commit, spec, @family_chain
     end
@@ -32,7 +32,7 @@ class HistorySurfer
 
       def to_s
         s = StringIO.new
-        s.puts "#{' ' * (@depth * 2)}#{@commit.sha} #{@spec}"
+        s.puts "#{' ' * (@depth * 2)}#{@commit.short_sha} #{@spec}"
         s.puts @children
         s.string
       end

@@ -16,7 +16,7 @@ class HistorySurfer
     attr_reader :sha, :specs
 
     def initialize(sha)
-      @sha = sha[0...7]
+      @sha = sha
       @specs = (Commit.cache[sha] ||= Commit.collect_specs(sha))
     end
 
@@ -25,6 +25,10 @@ class HistorySurfer
       @specs.select do |spec|
         spec.lbegin == lbegin && spec.lend == lend
       end
+    end
+
+    def short_sha
+      @sha[0...7]
     end
 
     private_class_method
