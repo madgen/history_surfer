@@ -21,7 +21,7 @@ class HistorySurfer
 
     # Take line beginning and end and find the corresponding stencil spec
     def search(lbegin, lend)
-      @specs.find do |spec|
+      @specs.select do |spec|
         spec.lbegin == lbegin && spec.lend == lend
       end
     end

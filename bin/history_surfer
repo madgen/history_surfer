@@ -4,6 +4,7 @@
 require 'history_surfer'
 require 'history_surfer/util'
 require 'history_surfer/commit'
+require 'history_surfer/tree'
 
 require 'pathname'
 
@@ -18,49 +19,28 @@ ROOT = Pathname.new ARGV[0]
 Dir.chdir ROOT
 FILE_NAME = ARGV[1]
 
-LOG_R = /commit (\w+)$.*?@@ -\d+,\d+ \+(\d+),(\d+) @@/m
-
 dispatch 'git checkout -f master'
 
 at_exit do
   dispatch 'git checkout -f master'
 end
 
-head = HistorySurfer::Commit.new dispatch('git rev-parse HEAD')[1].chomp
+head_commit = HistorySurfer::Commit.new dispatch('git rev-parse HEAD')[1].chomp
 
 # If the top level file doesn't have any stencils or camfort fails exit with
 # failure.
-exit 1 if head.specs.empty?
+exit 1 if head_commit.specs.empty?
 
-chains =
-  head.specs.map do |topspec|
+trees =
+  head_commit.specs.map do |topspec|
     dispatch('git checkout -f master')
-    _, output =
+    _, gitlog =
       dispatch("git log -L #{topspec.lbegin},#{topspec.lend}:#{FILE_NAME}")
 
-    chain = [[head.sha, topspec]]
-    output.scan(LOG_R) do |sha, lb, size|
-      lbegin = lb.to_i
-      commit = HistorySurfer::Commit.new sha
-      spec = commit.search(lbegin, lbegin + size.to_i - 1)
-      # If we cannot find any specs at the logged location we can't track
-      # further so we give up
-      break unless spec
-
-      # Make the chain more compact if the spec remains the same.
-      chain.pop if chain.last[1] == spec
-
-      chain << [sha, spec]
-    end
-
-    chain
+    HistorySurfer::Tree.new(head_commit, topspec, gitlog)
   end
 
-chains.each do |chain|
-  next if chain.size == 1
-
+trees.each do |tree|
   puts '-' * 80
-  chain.each do |sha, spec|
-    puts "#{sha}: #{spec}"
-  end
+  print tree
 end

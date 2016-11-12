@@ -7,5 +7,6 @@ bin/history_surfer
 lib/history_surfer.rb
 lib/history_surfer/commit.rb
 lib/history_surfer/stencil_spec.rb
+lib/history_surfer/tree.rb
 lib/history_surfer/util.rb
 test/test_history_surfer.rb
