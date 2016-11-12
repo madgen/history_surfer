@@ -24,6 +24,7 @@ class HistorySurfer
     def prune
       @root.setup_parents nil
       @root.children.each(&:prune)
+      @root.setup_depth # Pruning might have changed depths
     end
 
     def to_s
@@ -35,11 +36,11 @@ class HistorySurfer
       attr_accessor :parent, :children
       attr_reader :spec
 
-      def initialize(commit, spec, family_chain, depth = 0)
+      def initialize(commit, spec, family_chain)
         @commit = commit
         @spec = spec
-        @depth = depth
         @children = find_children family_chain
+        setup_depth
       end
 
       def to_s
@@ -47,6 +48,11 @@ class HistorySurfer
         s.puts "#{' ' * (@depth * 2)}#{@commit.short_sha} #{@spec}"
         s.puts @children
         s.string
+      end
+
+      def setup_depth(depth = 0)
+        @depth = depth
+        @children.each { |child| child.setup_depth(depth + 1) }
       end
 
       def setup_parents(parent)
@@ -89,11 +95,11 @@ class HistorySurfer
         same_spec_as_parent = potential_specs.find { |spec| spec == @spec }
 
         if same_spec_as_parent
-          [Node.new(commit, same_spec_as_parent, tail, @depth + 1)]
+          [Node.new(commit, same_spec_as_parent, tail)]
         else
           parents_potential_specs = @commit.search(@spec.lbegin, @spec.lend)
           (potential_specs - parents_potential_specs).map do |spec|
-            Node.new commit, spec, tail, @depth + 1
+            Node.new commit, spec, tail
           end
         end
       end
