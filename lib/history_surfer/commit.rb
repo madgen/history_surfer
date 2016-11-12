@@ -34,7 +34,7 @@ class HistorySurfer
       if @cache[sha]
         @cache[sha]
       else
-        success, output = dispatch("stack exec -- camfort stencils-infer #{FILE_NAME}")
+        success, output = dispatch("~/.local/bin/camfort stencils-infer #{FILE_NAME}")
 
         @cache[sha] =
           if success
