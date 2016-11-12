@@ -15,7 +15,7 @@ class HistorySurfer
     attr_reader :sha, :specs
 
     def initialize(sha)
-      @sha = sha
+      @sha = sha[0...7]
       @specs = Commit.collect_specs sha
     end
 
