@@ -17,12 +17,20 @@ class HistorySurfer
       @root = Node.new commit, spec, @family_chain
     end
 
+    def prune
+      @root.setup_parents nil
+      @root.children.each(&:prune)
+    end
+
     def to_s
       @root.to_s
     end
 
     # Internal node representation for the tree
     class Node
+      attr_accessor :parent, :children
+      attr_reader :spec
+
       def initialize(commit, spec, family_chain, depth = 0)
         @commit = commit
         @spec = spec
@@ -37,7 +45,31 @@ class HistorySurfer
         s.string
       end
 
-      private
+      def setup_parents(parent)
+        @parents_set = true
+        @parent = parent
+        @children.each do |child|
+          child.setup_parents self
+        end
+      end
+
+      # This operation prunes trees that has the same specification in a chain.
+      # Since nodes with multiple children cannot by definition have the same
+      # spec, only linear chains are reduced.
+      # Although the root can also be reduced, I haven't dont it so that it is
+      # obvious where the spec was initially inferred.
+      def prune
+        raise 'Parent unknown' unless @parents_set
+
+        if @parent && @parent.spec == @spec &&
+           @children.size == 1 && @children[0].spec == @spec
+
+          @parent.children = @children
+          @children[0].parent = @parent
+        end
+
+        @children.each(&:prune)
+      end
 
       def find_children(family_chain)
         return [] if family_chain.nil? || family_chain.empty?

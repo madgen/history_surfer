@@ -37,7 +37,9 @@ trees =
     _, gitlog =
       dispatch("git log -L #{topspec.lbegin},#{topspec.lend}:#{FILE_NAME}")
 
-    HistorySurfer::Tree.new(head_commit, topspec, gitlog)
+    tree = HistorySurfer::Tree.new(head_commit, topspec, gitlog)
+    tree.prune
+    tree
   end
 
 trees.each do |tree|
