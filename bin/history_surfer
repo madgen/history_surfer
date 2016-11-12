@@ -43,6 +43,8 @@ trees =
   end
 
 trees.each do |tree|
-  puts '-' * 80
-  print tree
+  unless tree.childless?
+    puts '-' * 80
+    print tree
+  end
 end

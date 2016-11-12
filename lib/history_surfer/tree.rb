@@ -17,6 +17,10 @@ class HistorySurfer
       @root = Node.new commit, spec, @family_chain
     end
 
+    def childless?
+      @root.children.empty?
+    end
+
     def prune
       @root.setup_parents nil
       @root.children.each(&:prune)
