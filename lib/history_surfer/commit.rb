@@ -11,12 +11,13 @@ class HistorySurfer
     STENCIL_R = /^\((\d+):\d+\)-\((\d+):\d+\) {4}(.*)$/
 
     @cache = {}
+    class << self; attr_accessor :cache; end
 
     attr_reader :sha, :specs
 
     def initialize(sha)
       @sha = sha[0...7]
-      @specs = Commit.collect_specs sha
+      @specs = (Commit.cache[sha] ||= Commit.collect_specs(sha))
     end
 
     # Take line beginning and end and find the corresponding stencil spec
@@ -31,20 +32,12 @@ class HistorySurfer
     def self.collect_specs(sha)
       dispatch("git checkout #{sha}")
 
-      if @cache[sha]
-        @cache[sha]
-      else
-        success, output = dispatch("~/.local/bin/camfort stencils-infer #{FILE_NAME}")
+      success, output = dispatch("~/.local/bin/camfort stencils-infer #{FILE_NAME}")
+      return [] unless success
 
-        @cache[sha] =
-          if success
-            output.scan(STENCIL_R).map do |lb, le, spec|
-              raise 'Specification not properly parsed.' unless lb && le && spec
-              StencilSpec.new spec, lb, le
-            end
-          else
-            []
-          end
+      output.scan(STENCIL_R).map do |lb, le, spec|
+        raise 'Specification not properly parsed.' unless lb && le && spec
+        StencilSpec.new spec, lb, le
       end
     end
   end
