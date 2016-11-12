@@ -65,11 +65,13 @@ class HistorySurfer
       def prune
         raise 'Parent unknown' unless @parents_set
 
-        if @parent && @parent.spec == @spec &&
-           @children.size == 1 && @children[0].spec == @spec
+        if @children.size == 1 && @children[0].spec == @spec &&
+           @parent && @parent.spec == @spec
 
           @parent.children = @children
           @children[0].parent = @parent
+        elsif @children.empty? && @parent.spec == @spec
+          @parent.children = []
         end
 
         @children.each(&:prune)
